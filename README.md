@@ -8,7 +8,7 @@ git clone git@github.com:clovislfbv/bot_A2.git
 Now, you're good to go!
 
 ### Add commands
-To add commands to the bot, you must go to the bottom of the main.py file. Then write your command in this form:
+To add commands to the bot, you must go to the bottom of the main.py file. Then write your command under this format:
 ```py
 @bot.command()
 async def yourfunction(ctx): #ctx needs to be in the arguments for the command to work on Discord 
