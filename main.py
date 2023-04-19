@@ -1,15 +1,13 @@
 import discord
 from discord.ext import commands, tasks
-from discord_slash import SlashCommand, SlashContext
-from discord_slash.utils.manage_commands import create_choice, create_option
+from discord import ApplicationCommandInteraction as APPCI, SlashCommandOption as Option
 import requests as r
 from datetime import datetime
 import vobject
 import pytz
 from random import choice
 
-bot = commands.Bot(command_prefix="$")
-slash = SlashCommand(bot, sync_commands = True)
+bot = commands.Bot(command_prefix="$", sync_commands = True)
 client = discord.Client()
 
 lastdlday = None
@@ -43,11 +41,10 @@ async def changeStatus():
     game = discord.Game(choice(status))
     await bot.change_presence(activity = game)
 
-@slash.slash(name="edt", description = "donne notre emploi du temps", options=[
-    create_option(name="day", description="le jour que tu veux consulté avec le format 'dd/mm/yyyy'", option_type=3, required=False)
+@bot.slash_command(name="edt", description = "donne notre emploi du temps", options=[
+    Option(name="day", description="le jour que tu veux consulté avec le format 'dd/mm/yyyy'", option_type=3, required=False)
 ])
-@bot.command()
-async def edt(ctx:SlashContext, day=None):
+async def edt(ctx:APPCI, day=None):
     global lastdlday, lastedt
 
     if day is not None:
@@ -109,11 +106,10 @@ async def edt(ctx:SlashContext, day=None):
 
         if len(dates) == 0:
             emb.add_field(name = "PAS COURS !!", value = "Aujourd'hui, il n'y a pas cours")
-        msg = await ctx.send(embed = emb)
+        msg = await ctx.respond(embed = emb)
     else:
         print("bad argument")
         await ctx.send("Je n'ai pas compris la date que tu as mise. La date que tu écris doit être sous le format `dd/mm/yyyy`. Cependant, si tu ne mets aucune date en argument, la commande montrera l'emploi du temps d'aujourd'hui.")
-
 
 with open('token_bot.txt', 'r') as token:
     bot.run(token.read())
