@@ -18,7 +18,7 @@ async def on_ready():
     print("ready")
     changeStatus.start()
 
-status = ["$help", "$edt", "aider les A2 à retrouver la classe où ils ont cours"]
+status = ["/edt", "aider les A2 à retrouver la classe où ils ont cours"]
 
 @bot.command()
 async def start(ctx, secondes = 5):
