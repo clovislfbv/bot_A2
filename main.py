@@ -1,50 +1,48 @@
 import discord
+from discord import app_commands, Game, Activity, ActivityType
 from discord.ext import commands, tasks
-from discord import ApplicationCommandInteraction as APPCI, SlashCommandOption as Option
 import requests as r
 from datetime import datetime
 import vobject
 import pytz
 from random import choice
 
-bot = commands.Bot(command_prefix="$", sync_commands = True)
-client = discord.Client()
+intents = discord.Intents.default()
+client = discord.Client(intents=intents)
+tree = app_commands.CommandTree(client)
 
 lastdlday = None
 lastedt = None
 
-@bot.event
+@client.event
 async def on_ready():
-    print("ready")
-    changeStatus.start()
+    print("Ready")
+    await tree.sync()
+    activity_list = ["/edt", "aider les A2 à retrouver la classe où ils ont cours"]
+    change_activity.start(activity_list)
 
-status = ["/edt", "aider les A2 à retrouver la classe où ils ont cours"]
+@tasks.loop(seconds=10)
+async def change_activity(activity_list):
+    activity = discord.Activity(type=discord.ActivityType.playing, name=activity_list[0])
+    await client.change_presence(activity=activity)
 
-@bot.command()
-async def start(ctx, secondes = 5):
-    ''' ne fait rien '''
-    changeStatus.change_interval(seconds = secondes)
+    activity_list.append(activity_list.pop(0))
 
-@bot.event
-async def on_command_error(ctx, error):
+
+@client.event
+async def on_command_error(interaction: discord.Interaction, error):
     if isinstance(error, commands.CommandNotFound):
-        await ctx.send("Dsl la commande que t'as écrite existe peut être dans tes rêves mais moi je la connais pas")
+        await interaction.response.send_message("Dsl la commande que t'as écrite existe peut être dans tes rêves mais moi je la connais pas")
     if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("Il manque un argument")
+        await interaction.response.send_message("Il manque un argument")
     elif isinstance(error, commands.MissingPermissions):
-        await ctx.send("Dsl mais t'as pas les permissions d'utiliser cette commande.")
+        await interaction.response.send_message("Dsl mais t'as pas les permissions d'utiliser cette commande.")
     elif isinstance(error.original, discord.Forbidden):
-        await ctx.send("Dsl je peux pas exécuter ta commande pcq les admins ne m'ont pas donner les permissions pour faire cela.")
+        await interaction.response.send_message("Dsl je peux pas exécuter ta commande pcq les admins ne m'ont pas donner les permissions pour faire cela.")
 
-@tasks.loop(seconds = 5)
-async def changeStatus():
-    game = discord.Game(choice(status))
-    await bot.change_presence(activity = game)
-
-@bot.slash_command(name="edt", description = "donne notre emploi du temps", options=[
-    Option(name="day", description="le jour que tu veux consulté avec le format 'dd/mm/yyyy'", option_type=3, required=False)
-])
-async def edt(ctx:APPCI, day=None):
+@tree.command(name='edt', description = "donne notre emploi du temps")
+@app_commands.describe(day = "le jour que tu veux consulter avec le format 'dd/mm/yyyy'")
+async def edt(interaction:discord.Interaction, day:str=None):
     global lastdlday, lastedt
 
     if day is not None:
@@ -106,10 +104,10 @@ async def edt(ctx:APPCI, day=None):
 
         if len(dates) == 0:
             emb.add_field(name = "PAS COURS !!", value = "Aujourd'hui, il n'y a pas cours")
-        msg = await ctx.respond(embed = emb)
+        msg = await interaction.response.send_message(embed = emb)
     else:
         print("bad argument")
-        await ctx.send("Je n'ai pas compris la date que tu as mise. La date que tu écris doit être sous le format `dd/mm/yyyy`. Cependant, si tu ne mets aucune date en argument, la commande montrera l'emploi du temps d'aujourd'hui.")
+        await interaction.response.send_message("Je n'ai pas compris la date que tu as mise. La date que tu écris doit être sous le format `dd/mm/yyyy`. Cependant, si tu ne mets aucune date en argument, la commande montrera l'emploi du temps d'aujourd'hui.")
 
 with open('token_bot.txt', 'r') as token:
-    bot.run(token.read())
+    client.run(token.read())
